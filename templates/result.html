@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tajemství a záhady — Výsledek</title>
+<style>
+:root { --bg:#f3e9d2; --cream:#faf3e0; --brown:#8b5a2b; --ink:#2b1d0e; --ink-soft:#6b5236; --red:#a13d2c; --green:#3d5c3a; --gold:#b8860b; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; min-height:100%; background:var(--bg); color:var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+body { display:flex; flex-direction:column; align-items:center; padding:6vh 4vw; }
+.card { background:var(--cream); border:1.5px solid var(--brown); border-radius:10px; padding:28px 30px; max-width:460px; width:100%; box-shadow:0 4px 18px rgba(43,29,14,0.15); }
+h1 { font-size:1.4rem; margin:0 0 4px 0; text-align:center; letter-spacing:0.03em; }
+.result-summary { text-align:center; margin-bottom:18px; }
+.result-score { font-size:2.4rem; font-weight:700; color:var(--red); margin:6px 0; }
+.result-stats { color:var(--ink-soft); font-size:.95rem; }
+.reveal-wrap { text-align:center; }
+.reveal-wrap svg { width:100%; max-width:420px; height:auto; }
+.result-note { margin-top:16px; font-size:.88rem; color:var(--ink-soft); text-align:center; font-style:italic; }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <p style="text-align:center;">Načítám výsledek…</p>
+  </div>
+
+<script>
+function buildRevealSvg(path, allCorrect) {
+  const stroke = allCorrect ? '#3d5c3a' : '#a13d2c';
+  const seedPts = [[30,40],[460,60],[40,380],[470,340],[250,10],[20,200],[480,200],[250,410]];
+  const sparkles = seedPts.map(([x,y]) => `<circle cx="${x}" cy="${y}" r="1.6" fill="#b8860b" opacity="0.55"/>`).join('');
+  const d = 'M ' + path.map(p => p[0] + ',' + p[1]).join(' L ');
+  const circles = path.map((p, i) => {
+    const isLast = i === path.length - 1;
+    const r = isLast ? 6 : 3.6;
+    return `<circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${stroke}" opacity="${isLast ? 1 : 0.85}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="420" fill="#faf3e0" rx="10"/>
+    ${sparkles}
+    <path d="${d}" fill="none" stroke="${stroke}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    ${circles}
+  </svg>`;
+}
+
+fetch('/api/result').then(r => r.json()).then(data => {
+  if (data.error === 'no-session') { window.location.href = '/'; return; }
+  if (!data.finished) { window.location.href = '/play'; return; }
+
+  const svg = buildRevealSvg(data.path, data.all_correct);
+  const headline = data.all_correct
+    ? 'Klíč se otočil na plno! 🗝️'
+    : 'Klíč má pár zubů ohnutých — příště se hodí odemknout naplno.';
+
+  document.getElementById('card').innerHTML = `
+    <h1>${headline}</h1>
+    <div class="result-summary">
+      <div class="result-score">${data.total_score} b</div>
+      <div class="result-stats">${data.n_correct} / ${data.n_total} správně &nbsp;·&nbsp; celkový čas ${data.total_time.toFixed(1)} s</div>
+    </div>
+    <div class="reveal-wrap">${svg}</div>
+    <p class="result-note">Tým: <b>${data.name}</b><br>
+    Sledujte společnou promítanou obrazovku (/board) — jakmile dohrají všechny týmy, uvidíte konečné pořadí.</p>
+  `;
+}).catch(() => {
+  document.getElementById('card').innerHTML = '<p style="text-align:center;">Chyba připojení k serveru.</p>';
+});
+</script>
+</body>
+</html>
