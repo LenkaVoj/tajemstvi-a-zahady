@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tajemství a záhady — Výsledková tabule</title>
+<style>
+:root { --bg:#f3e9d2; --cream:#faf3e0; --brown:#8b5a2b; --ink:#2b1d0e; --ink-soft:#6b5236; --red:#a13d2c; --green:#3d5c3a; --gold:#b8860b; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; min-height:100%; background:var(--bg); color:var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+body { display:flex; flex-direction:column; align-items:center; padding-top:4vh; padding-bottom:6vh; }
+.board-wrap { max-width:1100px; width:100%; padding:0 4vw; }
+.board-header { text-align:center; margin-bottom:22px; }
+.board-header h1 { font-size:2.1rem; margin:0; color:var(--red); }
+.board-status { color:var(--ink-soft); font-style:italic; }
+.board-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:16px; }
+.board-card { background:var(--cream); border:1.5px solid var(--brown); border-radius:10px; padding:14px 16px; position:relative; animation:popin .4s ease; }
+@keyframes popin { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.board-rank { position:absolute; top:-10px; left:-10px; background:var(--red); color:var(--cream); font-weight:700; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.95rem; border:2px solid var(--cream); }
+.board-card.gold .board-rank { background:var(--gold); }
+.board-card.silver .board-rank { background:#a9a2a2; }
+.board-card.bronze .board-rank { background:#b17a4a; }
+.board-name { font-weight:700; font-size:1.1rem; margin:4px 0 2px 22px; }
+.board-meta { font-size:.82rem; color:var(--ink-soft); margin-left:22px; margin-bottom:8px; }
+.board-svg { width:100%; height:90px; overflow:hidden; }
+.board-svg svg { width:100%; height:100%; display:block; }
+</style>
+</head>
+<body>
+  <div class="board-wrap">
+    <div class="board-header">
+      <h1>🗝️ TAJEMSTVÍ A ZÁHADY 🗝️</h1>
+      <p class="board-status" id="status">Načítám výsledky…</p>
+    </div>
+    <div class="board-grid" id="grid"></div>
+  </div>
+
+<script>
+function buildRevealSvg(path, allCorrect) {
+  const stroke = allCorrect ? '#3d5c3a' : '#a13d2c';
+  const d = 'M ' + path.map(p => p[0] + ',' + p[1]).join(' L ');
+  return `<svg viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="420" fill="#faf3e0" rx="10"/>
+    <path d="${d}" fill="none" stroke="${stroke}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function medalClass(rank) {
+  if (rank === 1) return 'gold';
+  if (rank === 2) return 'silver';
+  if (rank === 3) return 'bronze';
+  return '';
+}
+
+function render(data) {
+  const status = document.getElementById('status');
+  const grid = document.getElementById('grid');
+  const n = data.teams.length;
+  status.textContent = n === 0
+    ? `Zatím nikdo nedohrál · ${data.in_progress} týmů hraje`
+    : `${n} týmů v cíli${data.in_progress ? ' · ' + data.in_progress + ' ještě hraje' : ' · všechny týmy dohrály!'}`;
+
+  grid.innerHTML = '';
+  data.teams.forEach(t => {
+    const svg = buildRevealSvg(t.path, t.all_correct);
+    const div = document.createElement('div');
+    div.className = 'board-card ' + medalClass(t.rank);
+    div.innerHTML = `
+      <div class="board-rank">${t.rank}</div>
+      <div class="board-name">${t.name}</div>
+      <div class="board-meta">${t.total_score} b &nbsp;·&nbsp; ${t.n_correct}/${t.n_total} správně &nbsp;·&nbsp; ${t.total_time.toFixed(1)} s</div>
+      <div class="board-svg">${svg}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function poll() {
+  fetch('/api/leaderboard').then(r => r.json()).then(render).catch(() => {});
+}
+poll();
+setInterval(poll, 3000);
+</script>
+</body>
+</html>
