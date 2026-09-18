@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tajemství a záhady</title>
+<style>
+:root { --bg:#f3e9d2; --cream:#faf3e0; --brown:#8b5a2b; --ink:#2b1d0e; --ink-soft:#6b5236; --red:#a13d2c; --green:#3d5c3a; --gold:#b8860b; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; min-height:100%; background:var(--bg); color:var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+body { display:flex; flex-direction:column; align-items:center; padding:6vh 4vw; }
+.card { background:var(--cream); border:1.5px solid var(--brown); border-radius:10px; padding:28px 30px; max-width:560px; width:100%; box-shadow:0 4px 18px rgba(43,29,14,0.15); }
+h1 { font-size:1.7rem; margin:0 0 4px 0; text-align:center; letter-spacing:0.03em; color:var(--red); }
+.sub { text-align:center; color:var(--ink-soft); font-style:italic; margin:0 0 22px 0; font-size:0.95rem; }
+input[type=text] { width:100%; padding:12px 14px; font-size:1.05rem; border:1.5px solid var(--brown); border-radius:6px; font-family:inherit; background:#fff; margin-bottom:14px; }
+button { font-family:inherit; cursor:pointer; }
+.btn-primary { width:100%; padding:13px; font-size:1.05rem; font-weight:700; background:var(--red); color:var(--cream); border:none; border-radius:6px; transition:transform .08s ease, opacity .15s ease; }
+.btn-primary:hover { opacity:.92; }
+.btn-primary:active { transform:scale(.98); }
+.btn-primary:disabled { opacity:.5; cursor:default; }
+.error { color:var(--red); font-size:.9rem; margin:-6px 0 12px 0; min-height:1.2em; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🗝️ TAJEMSTVÍ A ZÁHADY 🗝️</h1>
+    <p class="sub">Kvíz o divech světa, tajemných hradech a záhadách přírody</p>
+    <p style="text-align:center; margin-bottom:20px;">Zadejte název svého týmu a pusťte se do otázek o divech
+    světa, strašidelných hradech, zvířecích a lidských kuriozitách i starých pověstech — a nezapomeňte na
+    pexeso uprostřed hry! Na konci uvidíte, jestli jste odemkli celý klíč, nebo se vám pár zubů ještě ztratilo.</p>
+    <input type="text" id="teamName" placeholder="Název týmu" maxlength="40" autocomplete="off">
+    <div class="error" id="err"></div>
+    <button class="btn-primary" id="joinBtn">Vstoupit do hry</button>
+  </div>
+
+<script>
+const btn = document.getElementById('joinBtn');
+const input = document.getElementById('teamName');
+const err = document.getElementById('err');
+
+function doJoin() {
+  const name = input.value.trim();
+  if (!name) { err.textContent = 'Zadejte prosím název týmu.'; return; }
+  btn.disabled = true;
+  fetch('/api/join', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  }).then(r => r.json()).then(data => {
+    if (data.error) { err.textContent = data.error; btn.disabled = false; return; }
+    window.location.href = '/play';
+  }).catch(() => { err.textContent = 'Nepodařilo se připojit k serveru.'; btn.disabled = false; });
+}
+btn.addEventListener('click', doJoin);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+</script>
+</body>
+</html>
