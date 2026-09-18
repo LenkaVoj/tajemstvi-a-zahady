@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tajemství a záhady</title>
+<style>
+:root { --bg:#f3e9d2; --cream:#faf3e0; --brown:#8b5a2b; --ink:#2b1d0e; --ink-soft:#6b5236; --red:#a13d2c; --green:#3d5c3a; --gold:#b8860b; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; min-height:100%; background:var(--bg); color:var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+body { display:flex; flex-direction:column; align-items:center; padding:6vh 4vw; }
+.card { background:var(--cream); border:1.5px solid var(--brown); border-radius:10px; padding:28px 30px; max-width:560px; width:100%; box-shadow:0 4px 18px rgba(43,29,14,0.15); }
+button { font-family:inherit; cursor:pointer; }
+.progress-row { display:flex; justify-content:space-between; align-items:baseline; font-size:.85rem; color:var(--ink-soft); margin-bottom:6px; }
+.progress-bar-track { height:6px; background:#e7d9b8; border-radius:3px; overflow:hidden; margin-bottom:20px; }
+.progress-bar-fill { height:100%; background:var(--green); border-radius:3px; transition:width .3s ease; }
+.timer-track { height:4px; background:#e7d9b8; border-radius:2px; overflow:hidden; margin:4px 0 20px 0; }
+.timer-fill { height:100%; background:var(--gold); width:100%; transition:width 1s linear; }
+.topic { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin-bottom:6px; text-align:center; }
+.question-text { font-size:1.28rem; text-align:center; line-height:1.4; margin:0 0 24px 0; }
+.question-image { display:block; max-width:100%; max-height:260px; margin:0 auto 18px auto; border-radius:8px; border:1.5px solid var(--brown); object-fit:cover; }
+.options { display:flex; flex-direction:column; gap:12px; }
+.opt-btn { padding:16px 18px; font-size:1.05rem; text-align:left; background:#fff; border:1.5px solid var(--brown); border-radius:8px; color:var(--ink); transition:background .15s ease, transform .08s ease; }
+.opt-btn:hover { background:#f2e6c9; }
+.opt-btn:active { transform:scale(.99); }
+.opt-btn:disabled { cursor:default; }
+.opt-btn.correct { background:#e2ebdf; border-color:var(--green); color:var(--green); font-weight:700; }
+.opt-btn.wrong { background:#f3ded9; border-color:var(--red); color:var(--red); }
+.feedback-note { margin-top:14px; font-size:.92rem; font-style:italic; color:var(--ink-soft); min-height:1.4em; text-align:center; }
+.score-pill { display:inline-block; background:#ecdfbd; border-radius:20px; padding:3px 12px; font-size:.85rem; color:var(--ink-soft); }
+.rank-pill { display:inline-block; background:#e2ebdf; border-radius:20px; padding:3px 12px; font-size:.85rem; color:var(--green); font-weight:700; margin-left:6px; }
+.pill-group { display:flex; align-items:baseline; }
+
+.pexeso-instructions { font-size:.92rem; color:var(--ink-soft); text-align:center; margin:0 0 20px 0; font-style:italic; line-height:1.4; }
+.pexeso-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; perspective:800px; }
+.pex-card { aspect-ratio:3/4; border:none; background:none; padding:0; }
+.pex-card-inner { position:relative; width:100%; height:100%; transition:transform .5s ease; transform-style:preserve-3d; }
+.pex-card.flipped .pex-card-inner { transform:rotateY(180deg); }
+.pex-face { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:8px; backface-visibility:hidden; padding:5px; text-align:center; }
+.pex-front { background:linear-gradient(135deg,#c99a4a,#8b5a2b); font-size:1.5rem; border:1.5px solid var(--brown); }
+.pex-back { background:#fff; border:1.5px solid var(--brown); transform:rotateY(180deg); font-size:.68rem; line-height:1.25; color:var(--ink); font-weight:600; }
+.pex-card.matched .pex-back { background:#e2ebdf; border-color:var(--green); color:var(--green); }
+.pex-card.wrong .pex-back { background:#f3ded9; border-color:var(--red); color:var(--red); }
+.pex-card:disabled { cursor:default; }
+
+.milestone-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(43,29,14,0.55); z-index:999; }
+.milestone-overlay.show { display:flex; }
+.milestone-card { background:var(--cream); border:2px solid var(--gold); border-radius:16px; padding:36px 44px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.28); animation:milestonePop .5s cubic-bezier(.34,1.56,.64,1); max-width:80vw; }
+@keyframes milestonePop { 0%{transform:scale(.3) rotate(-8deg); opacity:0;} 60%{transform:scale(1.08) rotate(3deg); opacity:1;} 100%{transform:scale(1) rotate(0deg);} }
+.milestone-emoji { font-size:4.2rem; line-height:1; animation:milestoneBounce 1s ease-in-out infinite; }
+@keyframes milestoneBounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);} }
+.milestone-text { margin-top:10px; font-size:1.25rem; font-weight:700; color:var(--ink); }
+.milestone-sub { margin-top:4px; font-size:.88rem; color:var(--ink-soft); }
+.confetti-piece { position:fixed; top:-40px; font-size:1.5rem; z-index:998; animation:confettiFall linear forwards; pointer-events:none; }
+@keyframes confettiFall { to { transform:translateY(110vh) rotate(360deg); opacity:.15; } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="progress-row">
+      <span id="progressLabel">Otázka 1 / 31</span>
+      <span class="pill-group">
+        <span class="score-pill" id="scorePill">0 b</span>
+        <span class="rank-pill" id="rankPill"></span>
+      </span>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="timer-track" id="timerTrack"><div class="timer-fill" id="timerFill"></div></div>
+
+    <div class="topic" id="topic">…</div>
+
+    <div id="triviaArea">
+      <img class="question-image" id="questionImage" style="display:none" alt="">
+      <p class="question-text" id="questionText">Načítám otázku…</p>
+      <div class="options" id="options"></div>
+    </div>
+
+    <div id="pexesoArea" style="display:none">
+      <p class="pexeso-instructions" id="pexesoInstructions"></p>
+      <div class="pexeso-grid" id="pexesoGrid"></div>
+    </div>
+
+    <p class="feedback-note" id="feedback"></p>
+  </div>
+
+  <div class="milestone-overlay" id="milestoneOverlay">
+    <div class="milestone-card">
+      <div class="milestone-emoji" id="milestoneEmoji">🏆</div>
+      <div class="milestone-text" id="milestoneText">Jsi na to borec!</div>
+      <div class="milestone-sub" id="milestoneSub"></div>
+    </div>
+  </div>
+
+<script>
+const TIME_LIMIT = 20;
+let answering = false;
+let timerInterval = null;
+
+const els = {
+  progressLabel: document.getElementById('progressLabel'),
+  progressFill: document.getElementById('progressFill'),
+  timerTrack: document.getElementById('timerTrack'),
+  timerFill: document.getElementById('timerFill'),
+  scorePill: document.getElementById('scorePill'),
+  rankPill: document.getElementById('rankPill'),
+  topic: document.getElementById('topic'),
+  triviaArea: document.getElementById('triviaArea'),
+  questionImage: document.getElementById('questionImage'),
+  questionText: document.getElementById('questionText'),
+  options: document.getElementById('options'),
+  pexesoArea: document.getElementById('pexesoArea'),
+  pexesoInstructions: document.getElementById('pexesoInstructions'),
+  pexesoGrid: document.getElementById('pexesoGrid'),
+  feedback: document.getElementById('feedback'),
+  milestoneOverlay: document.getElementById('milestoneOverlay'),
+  milestoneEmoji: document.getElementById('milestoneEmoji'),
+  milestoneText: document.getElementById('milestoneText'),
+  milestoneSub: document.getElementById('milestoneSub'),
+};
+
+const MILESTONE_MESSAGES = [
+  {emoji: '🦝👍', text: 'Jsi na to borec!'},
+  {emoji: '🐨🎉', text: 'Šikovné hlavičko!'},
+  {emoji: '🗝️🧠', text: 'Záhadný mozek!'},
+  {emoji: '🦊🔥', text: 'Na to máš čuch!'},
+  {emoji: '🐧⭐', text: 'Hvězda kvízu!'},
+  {emoji: '🐸🥳', text: 'Paráda, jede ti to!'},
+  {emoji: '🐢🚀', text: 'Letíš jako raketa!'},
+  {emoji: '🦉🎯', text: 'Přesně do černého!'},
+];
+
+// Shuffle-bag: shows every message once (in random order) before any
+// repeats, instead of pure random picks that could show the same one
+// twice in a row.
+let milestoneBag = [];
+function nextMilestoneMessage() {
+  if (milestoneBag.length === 0) {
+    milestoneBag = MILESTONE_MESSAGES.slice();
+    for (let i = milestoneBag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [milestoneBag[i], milestoneBag[j]] = [milestoneBag[j], milestoneBag[i]];
+    }
+  }
+  return milestoneBag.pop();
+}
+
+function spawnConfetti() {
+  const bits = ['🗝️', '✨', '🎉', '⭐', '🏆'];
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement('span');
+    s.className = 'confetti-piece';
+    s.textContent = bits[Math.floor(Math.random() * bits.length)];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = (2 + Math.random() * 1.2) + 's';
+    s.style.animationDelay = (Math.random() * 0.35) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6200);
+  }
+}
+
+const MILESTONE_DURATION = 5000;
+
+function showMilestone(count) {
+  const pick = nextMilestoneMessage();
+  els.milestoneEmoji.textContent = pick.emoji;
+  els.milestoneText.textContent = pick.text;
+  els.milestoneSub.textContent = `Tvoje ${count}. správná odpověď!`;
+  spawnConfetti();
+  els.milestoneOverlay.classList.add('show');
+  setTimeout(() => { els.milestoneOverlay.classList.remove('show'); }, MILESTONE_DURATION);
+  // A second confetti burst partway through keeps it visually alive for the full 5s.
+  setTimeout(spawnConfetti, MILESTONE_DURATION / 2);
+}
+
+function updateRankPill(rank, totalTeams) {
+  if (!rank || !totalTeams || totalTeams < 2) { els.rankPill.textContent = ''; return; }
+  els.rankPill.textContent = `${rank}. místo z ${totalTeams}`;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  const start = Date.now();
+  els.timerFill.style.transition = 'none';
+  els.timerFill.style.width = '100%';
+  requestAnimationFrame(() => { els.timerFill.style.transition = 'width 1s linear'; });
+  timerInterval = setInterval(() => {
+    const elapsed = (Date.now() - start) / 1000;
+    const pct = Math.max(0, 100 * (1 - elapsed / TIME_LIMIT));
+    els.timerFill.style.width = pct + '%';
+    if (elapsed >= TIME_LIMIT) clearInterval(timerInterval);
+  }, 200);
+}
+
+function loadQuestion() {
+  answering = false;
+  els.feedback.textContent = '';
+  clearInterval(timerInterval);
+  fetch('/api/question').then(r => r.json()).then(data => {
+    if (data.error === 'no-session') { window.location.href = '/'; return; }
+    if (data.finished) { window.location.href = '/result'; return; }
+
+    els.progressLabel.textContent = `Otázka ${data.index + 1} / ${data.total}`;
+    els.progressFill.style.width = (100 * data.index / data.total) + '%';
+    els.scorePill.textContent = data.score_so_far + ' b';
+    updateRankPill(data.rank, data.total_teams);
+
+    if (data.type === 'pexeso') {
+      els.timerTrack.style.display = 'none';
+      els.triviaArea.style.display = 'none';
+      els.pexesoArea.style.display = '';
+      els.topic.textContent = 'téma: pexeso';
+      renderPexeso(data);
+    } else {
+      els.timerTrack.style.display = '';
+      els.pexesoArea.style.display = 'none';
+      els.triviaArea.style.display = '';
+      els.topic.textContent = 'téma: ' + data.topic;
+      els.questionText.textContent = data.text;
+      if (data.image) {
+        els.questionImage.src = data.image;
+        els.questionImage.style.display = '';
+      } else {
+        els.questionImage.style.display = 'none';
+        els.questionImage.src = '';
+      }
+      els.options.innerHTML = '';
+      data.options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'opt-btn';
+        b.textContent = opt.text;
+        b.dataset.key = opt.key;
+        b.addEventListener('click', () => submitAnswer(opt.key));
+        els.options.appendChild(b);
+      });
+      startTimer();
+    }
+  }).catch(() => {
+    els.questionText.textContent = 'Chyba připojení k serveru — zkuste obnovit stránku.';
+  });
+}
+
+function submitAnswer(choice) {
+  if (answering) return;
+  answering = true;
+  clearInterval(timerInterval);
+  const buttons = els.options.querySelectorAll('.opt-btn');
+  buttons.forEach(b => b.disabled = true);
+
+  fetch('/api/answer', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({choice})
+  }).then(r => r.json()).then(data => {
+    if (data.error) { els.feedback.textContent = 'Chyba: ' + data.error; return; }
+    buttons.forEach(b => {
+      if (b.dataset.key === choice) {
+        b.classList.add(data.correct ? 'correct' : 'wrong');
+      }
+    });
+    els.feedback.textContent = (data.correct ? '✓ Správně! ' : '✗ Bohužel. ') + data.note;
+    els.scorePill.textContent = data.total_score + ' b';
+    updateRankPill(data.rank, data.total_teams);
+    if (data.milestone) { showMilestone(data.milestone_count); }
+    const delay = data.milestone ? (MILESTONE_DURATION + 300) : 4000;
+    setTimeout(() => {
+      if (data.finished) { window.location.href = '/result'; }
+      else { loadQuestion(); }
+    }, delay);
+  }).catch(() => {
+    els.feedback.textContent = 'Chyba připojení — zkuste to znovu.';
+    answering = false;
+    buttons.forEach(b => b.disabled = false);
+  });
+}
+
+// ---- pexeso (memory-matching) round ----
+let pexesoCards = [];
+let pexesoLocked = false;
+
+function attemptsWord(n) {
+  if (n === 1) return 'pokus';
+  if (n >= 2 && n <= 4) return 'pokusy';
+  return 'pokusů';
+}
+
+function renderPexeso(data) {
+  els.pexesoInstructions.textContent = data.instructions || '';
+  els.pexesoGrid.innerHTML = '';
+  pexesoCards = [];
+  pexesoLocked = false;
+  const matchedSet = new Set(data.matched || []);
+  const matchedLabels = data.matched_labels || {};
+
+  for (let i = 0; i < data.n_cards; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'pex-card';
+    btn.dataset.id = i;
+    btn.innerHTML = '<div class="pex-card-inner">'
+      + '<div class="pex-face pex-front">🗝️</div>'
+      + '<div class="pex-face pex-back"><span></span></div>'
+      + '</div>';
+    if (matchedSet.has(i)) {
+      btn.classList.add('matched', 'flipped');
+      btn.disabled = true;
+      btn.querySelector('.pex-back span').textContent = matchedLabels[i] || '';
+    } else {
+      btn.addEventListener('click', () => flipPexesoCard(i));
+    }
+    els.pexesoGrid.appendChild(btn);
+    pexesoCards.push(btn);
+  }
+}
+
+function flipPexesoCard(id) {
+  if (pexesoLocked) return;
+  const btn = pexesoCards[id];
+  if (!btn || btn.classList.contains('matched') || btn.classList.contains('flipped')) return;
+
+  pexesoLocked = true;
+  btn.classList.add('flipped');
+  btn.disabled = true;
+
+  fetch('/api/pexeso/flip', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({card_id: id})
+  }).then(r => r.json()).then(data => {
+    if (data.error) {
+      pexesoLocked = false;
+      btn.classList.remove('flipped');
+      btn.disabled = false;
+      return;
+    }
+    btn.querySelector('.pex-back span').textContent = data.label;
+
+    if (data.reveal_only) {
+      pexesoLocked = false; // waiting for the second card of this turn
+      return;
+    }
+
+    const firstBtn = pexesoCards[data.first_id];
+    const secondBtn = pexesoCards[data.second_id];
+
+    if (data.match) {
+      [firstBtn, secondBtn].forEach(b => b.classList.add('matched'));
+      pexesoLocked = false;
+      if (data.matched_all) {
+        handlePexesoComplete(data);
+      }
+    } else {
+      [firstBtn, secondBtn].forEach(b => b.classList.add('wrong'));
+      setTimeout(() => {
+        [firstBtn, secondBtn].forEach(b => {
+          b.classList.remove('flipped', 'wrong');
+          b.disabled = false;
+          b.querySelector('.pex-back span').textContent = '';
+        });
+        pexesoLocked = false;
+      }, 1100);
+    }
+  }).catch(() => {
+    pexesoLocked = false;
+    btn.classList.remove('flipped');
+    btn.disabled = false;
+  });
+}
+
+function handlePexesoComplete(data) {
+  els.scorePill.textContent = data.total_score + ' b';
+  updateRankPill(data.rank, data.total_teams);
+  els.feedback.textContent = `✓ Pexeso hotovo! +${data.score_gained} b (${data.attempts} ${attemptsWord(data.attempts)})`;
+  if (data.milestone) { showMilestone(data.milestone_count); }
+  const delay = data.milestone ? (MILESTONE_DURATION + 300) : 4000;
+  setTimeout(() => {
+    if (data.finished) { window.location.href = '/result'; }
+    else { loadQuestion(); }
+  }, delay);
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
