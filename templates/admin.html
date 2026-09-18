@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tajemství a záhady — Správa hry</title>
+<style>
+:root { --bg:#f3e9d2; --cream:#faf3e0; --brown:#8b5a2b; --ink:#2b1d0e; --ink-soft:#6b5236; --red:#a13d2c; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; min-height:100%; background:var(--bg); color:var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+body { display:flex; flex-direction:column; align-items:center; padding:6vh 4vw; }
+.card { background:var(--cream); border:1.5px solid var(--brown); border-radius:10px; padding:28px 30px; max-width:420px; width:100%; box-shadow:0 4px 18px rgba(43,29,14,0.15); }
+h1 { font-size:1.3rem; margin:0 0 4px 0; text-align:center; }
+.sub { text-align:center; color:var(--ink-soft); font-style:italic; margin:0 0 18px 0; font-size:.95rem; }
+button { font-family:inherit; cursor:pointer; }
+.btn-primary { width:100%; padding:13px; font-size:1.05rem; font-weight:700; background:var(--red); color:var(--cream); border:none; border-radius:6px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Správa hry</h1>
+    <p class="sub">Tato stránka není nikde odkazovaná — jen vy znáte adresu /admin.
+    Nesdílejte ji s týmy, jim posílejte pouze hlavní odkaz.</p>
+    <p style="text-align:center; margin-bottom:16px;">
+      Smaže všechny uložené výsledky — použijte před novým kolem hry
+      (např. druhá směna, jiný den).
+    </p>
+    <button class="btn-primary" id="resetBtn">Smazat všechny výsledky a začít znovu</button>
+    <p id="msg" style="text-align:center; margin-top:14px; color:#6b5236;"></p>
+  </div>
+<script>
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Opravdu smazat všechny výsledky všech týmů?')) return;
+  fetch('/api/admin/reset', {method: 'POST'})
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('msg').textContent = d.ok
+        ? 'Hotovo — všechny týmy smazány, hra je připravená na nové kolo.'
+        : 'Chyba: ' + (d.error || 'neznámá');
+    })
+    .catch(() => { document.getElementById('msg').textContent = 'Chyba připojení.'; });
+});
+</script>
+</body>
+</html>
